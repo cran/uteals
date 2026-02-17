@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Module Access Management with rAccess</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Module Access Management with
+<code>rAccess</code></h1>
+
+
+
+<p>This vignette demonstrates how to implement module-level access
+control in <code>teal</code> applications using the <code>rAccess</code>
+package integration provided by uteals.</p>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>The <code>rAccess</code> package enables role-based access control
+for <code>teal</code> modules, allowing you to:</p>
+<ul>
+<li>Restrict module access based on user permissions</li>
+<li>Implement admin-only functionality</li>
+<li>Dynamically filter modules at runtime</li>
+<li>Provide graceful handling for unauthorized access</li>
+</ul>
+<p>Users will only see and interact with modules they are authorized to
+use.</p>
+</div>
+<div id="library-calls" class="section level2">
+<h2>Library Calls</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(uteals)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(teal)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(teal.modules.general)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(rAccess)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(shiny)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">library</span>(bslib)</span></code></pre></div>
+</div>
+<div id="quick-start" class="section level2">
+<h2>Quick Start</h2>
+<p>Here’s a minimal example to get started:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># 1. Create modules</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>mods <span class="ot">&lt;-</span> <span class="fu">modules</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="fu">tm_data_table</span>(<span class="st">&quot;Data Table&quot;</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="fu">tm_variable_browser</span>(<span class="st">&quot;Variable Browser&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># 2. Extract module structure</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">extract_modules_to_yaml</span>(mods, <span class="st">&quot;panel_str.yml&quot;</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co"># 3. Filter modules by user permissions</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>filtered_mods <span class="ot">&lt;-</span> <span class="fu">keep_by_label</span>(mods, <span class="fu">c</span>(<span class="st">&quot;Data Table&quot;</span>))</span></code></pre></div>
+</div>
+<div id="configuration" class="section level2">
+<h2>Configuration</h2>
+<div id="step-1-generate-module-structure" class="section level3">
+<h3>Step 1: Generate Module Structure</h3>
+<p>Use the <code>extract_modules_to_yaml()</code> function to
+automatically generate the module structure:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Define your teal modules</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>mods <span class="ot">&lt;-</span> <span class="fu">modules</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">tm_data_table</span>(<span class="st">&quot;Data Table&quot;</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="fu">tm_variable_browser</span>(<span class="st">&quot;Variable Browser&quot;</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="fu">tm_g_scatterplot</span>(<span class="st">&quot;Scatterplot&quot;</span>, <span class="at">x =</span> ..., <span class="at">y =</span> ...),</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="fu">tm_outliers</span>(<span class="st">&quot;Summary Statistics&quot;</span>, <span class="at">outlier_var =</span> ...)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co"># Generate YAML structure</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="fu">extract_modules_to_yaml</span>(mods, <span class="st">&quot;panel_str.yml&quot;</span>)</span></code></pre></div>
+<p>This creates:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># panel_str.yml</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">panel_str</span><span class="kw">:</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">access_panel</span><span class="kw">:</span><span class="at"> ADMIN</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">access_panel</span><span class="kw">:</span><span class="at"> Modules</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="at">  </span><span class="fu">access_units</span><span class="kw">:</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Data Table</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Variable Browser</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Scatterplot</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Summary Statistics</span></span></code></pre></div>
+</div>
+<div id="step-2-create-raccess-configuration" class="section level3">
+<h3>Step 2: Create <code>rAccess</code> Configuration</h3>
+<p>Create your main configuration file
+(<code>rAccess_config.yml</code>):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># rAccess_config.yml</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">module</span><span class="kw">:</span><span class="at"> rAccess</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">parameters</span><span class="kw">:</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="at">  </span><span class="fu">app_name</span><span class="kw">:</span><span class="at"> TealAccessDemo</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="at">  </span><span class="fu">board_type</span><span class="kw">:</span><span class="at"> local</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="at">  </span><span class="fu">access_mode</span><span class="kw">:</span><span class="at"> default</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="at">  </span><span class="fu">unit_display</span><span class="kw">:</span><span class="at"> </span><span class="st">&#39;dropdown&#39;</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="at">  </span><span class="fu">user_df</span><span class="kw">:</span><span class="at"> !expr tibble::tribble(</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="at">    ~userid, ~username,</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="at">    </span><span class="st">&quot;user1&quot;</span><span class="at">, &quot;Regular User&quot;,</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="at">    </span><span class="st">&quot;user2&quot;</span><span class="at">, &quot;Limited User&quot;)</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="at">  </span><span class="fu">use_rconnect_users</span><span class="kw">:</span><span class="at"> </span><span class="ch">FALSE</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="at">  </span><span class="fu">verbose</span><span class="kw">:</span><span class="at"> </span><span class="ch">FALSE</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="at">  </span><span class="fu">secure_mode</span><span class="kw">:</span><span class="at"> </span><span class="ch">FALSE</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co"># Copy the panel_str section from generated file</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="fu">panel_str</span><span class="kw">:</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">access_panel</span><span class="kw">:</span><span class="at"> ADMIN</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">access_panel</span><span class="kw">:</span><span class="at"> Modules</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="at">  </span><span class="fu">access_units</span><span class="kw">:</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Data Table</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Variable Browser</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Scatterplot</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">unit</span><span class="kw">:</span><span class="at"> Summary Statistics</span></span></code></pre></div>
+</div>
+</div>
+<div id="implementation" class="section level2">
+<h2>Implementation</h2>
+<div id="pattern-1-basic-module-filtering" class="section level3">
+<h3>Pattern 1: Basic Module Filtering</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Filter modules based on user access</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>user_modules <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Data Table&quot;</span>, <span class="st">&quot;Variable Browser&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>filtered_modules <span class="ot">&lt;-</span> <span class="fu">keep_by_label</span>(all_modules, user_modules)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co"># Remove specific modules</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>restricted_modules <span class="ot">&lt;-</span> <span class="fu">remove_by_label</span>(all_modules, <span class="fu">c</span>(<span class="st">&quot;Admin Panel&quot;</span>))</span></code></pre></div>
+</div>
+<div id="pattern-2-dynamic-access-control" class="section level3">
+<h3>Pattern 2: Dynamic Access Control</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>server <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session) {</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="co"># Get user identity</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  user_id <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">interactive</span>(), <span class="fu">Sys.getenv</span>(<span class="st">&quot;USER&quot;</span>), session<span class="sc">$</span>user)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="co"># Initialize rAccess</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  iam <span class="ot">&lt;-</span> rAccess<span class="sc">$</span><span class="fu">new</span>(<span class="at">user =</span> user_id, <span class="at">config =</span> <span class="st">&quot;rAccess_config.yml&quot;</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="co"># Get user permissions</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  user_access <span class="ot">&lt;-</span> iam<span class="sc">$</span><span class="fu">get_user_accesslist</span>()</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  allowed_modules <span class="ot">&lt;-</span> <span class="fu">unlist</span>(user_access, <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="co"># Filter modules</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  filtered_modules <span class="ot">&lt;-</span> <span class="fu">keep_by_label</span>(all_modules, allowed_modules)</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="co"># Handle edge cases</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(filtered_modules)) {</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>    filtered_modules <span class="ot">&lt;-</span> <span class="fu">create_no_access_module</span>()</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  }</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="complete-application-example" class="section level2">
+<h2>Complete Application Example</h2>
+<div id="configuration-1" class="section level3">
+<h3>Configuration</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># rAccess_config.yml</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">module</span><span class="kw">:</span><span class="at"> rAccess</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">parameters</span><span class="kw">:</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="at">  </span><span class="fu">app_name</span><span class="kw">:</span><span class="at"> TealAccessDemo</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="at">  </span><span class="fu">board_type</span><span class="kw">:</span><span class="at"> local</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="at">  </span><span class="fu">access_mode</span><span class="kw">:</span><span class="at"> default</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="at">  </span><span class="fu">unit_display</span><span class="kw">:</span><span class="at"> </span><span class="st">&#39;dropdown&#39;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="at">  </span><span class="fu">user_df</span><span class="kw">:</span><span class="at"> !expr tibble::tribble(</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="at">    ~userid, ~username,</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="at">    </span><span class="st">&quot;user1&quot;</span><span class="at">, &quot;Regular User&quot;,</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="at">    </span><span class="st">&quot;user2&quot;</span><span class="at">, &quot;Limited User&quot;)</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="at">  </span><span class="fu">use_rconnect_users</span><span class="kw">:</span><span class="at"> </span><span class="ch">FALSE</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="at">  </span><span class="fu">verbose</span><span class="kw">:</span><span class="at"> </span><span class="ch">FALSE</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="at">  </span><span class="fu">secure_mode</span><span class="kw">:</span><span class="at"> </span><span class="ch">FALSE</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="do">### Data Setup</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># Prepare sample data</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>data <span class="ot">&lt;-</span> teal.data<span class="sc">::</span><span class="fu">teal_data</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">IRIS =</span> iris,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">MTCARS =</span> mtcars,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">code =</span> <span class="fu">c</span>(<span class="st">&quot;IRIS &lt;- iris&quot;</span>, <span class="st">&quot;MTCARS &lt;- mtcars&quot;</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="do">### Module Definition</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co"># Define all available modules</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>all_modules <span class="ot">&lt;-</span> <span class="fu">modules</span>(</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  <span class="fu">tm_data_table</span>(<span class="st">&quot;Data Table&quot;</span>),</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="fu">tm_variable_browser</span>(<span class="st">&quot;Variable Browser&quot;</span>),</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  <span class="fu">tm_g_scatterplot</span>(</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">&quot;Scatterplot&quot;</span>,</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">data_extract_spec</span>(</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>      <span class="at">dataname =</span> <span class="st">&quot;IRIS&quot;</span>,</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>      <span class="at">select =</span> <span class="fu">select_spec</span>(<span class="at">choices =</span> <span class="fu">variable_choices</span>(iris))</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>    ),</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">data_extract_spec</span>(</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>      <span class="at">dataname =</span> <span class="st">&quot;IRIS&quot;</span>,</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>      <span class="at">select =</span> <span class="fu">select_spec</span>(<span class="at">choices =</span> <span class="fu">variable_choices</span>(iris))</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>    )</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>  ),</span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>  <span class="fu">tm_outliers</span>(</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">&quot;Summary Statistics&quot;</span>,</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>    <span class="at">outlier_var =</span> <span class="fu">data_extract_spec</span>(</span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a>      <span class="at">dataname =</span> <span class="st">&quot;MTCARS&quot;</span>,</span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a>      <span class="at">select =</span> <span class="fu">select_spec</span>(<span class="at">choices =</span> <span class="fu">variable_choices</span>(mtcars, <span class="fu">c</span>(<span class="st">&quot;mpg&quot;</span>, <span class="st">&quot;hp&quot;</span>, <span class="st">&quot;wt&quot;</span>)))</span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a>    )</span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a>  )</span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a>)</span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="do">### UI Implementation</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a>ui <span class="ot">&lt;-</span> bslib<span class="sc">::</span><span class="fu">page_navbar</span>(</span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Teal Access Demo&quot;</span>,</span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a>  <span class="co"># Main application tab</span></span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a>  bslib<span class="sc">::</span><span class="fu">nav_panel</span>(</span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a>    <span class="st">&quot;Analytics Modules&quot;</span>,</span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a>    <span class="fu">uiOutput</span>(<span class="st">&quot;teal_ui&quot;</span>)</span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a>  ),</span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a></span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a>  <span class="co"># Admin panel (conditionally visible)</span></span>
+<span id="cb9-45"><a href="#cb9-45" tabindex="-1"></a>  bslib<span class="sc">::</span><span class="fu">nav_panel</span>(</span>
+<span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a>    <span class="st">&quot;Access Control&quot;</span>,</span>
+<span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a>    rAccess<span class="sc">::</span><span class="fu">module_iam_ui</span>(<span class="st">&quot;access_control&quot;</span>),</span>
+<span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a>    tags<span class="sc">$</span><span class="fu">div</span>(</span>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a>      <span class="at">class =</span> <span class="st">&quot;alert alert-info&quot;</span>,</span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a>      tags<span class="sc">$</span><span class="fu">h5</span>(<span class="st">&quot;Administrator Panel&quot;</span>),</span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a>      tags<span class="sc">$</span><span class="fu">p</span>(<span class="st">&quot;Manage user access and permissions here.&quot;</span>)</span>
+<span id="cb9-52"><a href="#cb9-52" tabindex="-1"></a>    )</span>
+<span id="cb9-53"><a href="#cb9-53" tabindex="-1"></a>  )</span>
+<span id="cb9-54"><a href="#cb9-54" tabindex="-1"></a>)</span>
+<span id="cb9-55"><a href="#cb9-55" tabindex="-1"></a></span>
+<span id="cb9-56"><a href="#cb9-56" tabindex="-1"></a><span class="do">### Server Implementation</span></span>
+<span id="cb9-57"><a href="#cb9-57" tabindex="-1"></a>server <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session) {</span>
+<span id="cb9-58"><a href="#cb9-58" tabindex="-1"></a>  <span class="co"># User authentication</span></span>
+<span id="cb9-59"><a href="#cb9-59" tabindex="-1"></a>  user_id <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">interactive</span>(), <span class="st">&quot;user1&quot;</span>, session<span class="sc">$</span>user)</span>
+<span id="cb9-60"><a href="#cb9-60" tabindex="-1"></a></span>
+<span id="cb9-61"><a href="#cb9-61" tabindex="-1"></a>  <span class="co"># Initialize access control</span></span>
+<span id="cb9-62"><a href="#cb9-62" tabindex="-1"></a>  iam <span class="ot">&lt;-</span> rAccess<span class="sc">$</span><span class="fu">new</span>(<span class="at">user =</span> user_id, <span class="at">config =</span> <span class="st">&quot;rAccess_config.yml&quot;</span>)</span>
+<span id="cb9-63"><a href="#cb9-63" tabindex="-1"></a></span>
+<span id="cb9-64"><a href="#cb9-64" tabindex="-1"></a>  <span class="co"># Admin module server (conditional)</span></span>
+<span id="cb9-65"><a href="#cb9-65" tabindex="-1"></a>  <span class="cf">if</span> (iam<span class="sc">$</span><span class="fu">no_admin</span>() <span class="sc">||</span> iam<span class="sc">$</span><span class="fu">is_admin</span>()) {</span>
+<span id="cb9-66"><a href="#cb9-66" tabindex="-1"></a>    rAccess<span class="sc">::</span><span class="fu">module_iam_server</span>(<span class="st">&quot;access_control&quot;</span>, iam)</span>
+<span id="cb9-67"><a href="#cb9-67" tabindex="-1"></a>  }</span>
+<span id="cb9-68"><a href="#cb9-68" tabindex="-1"></a></span>
+<span id="cb9-69"><a href="#cb9-69" tabindex="-1"></a>  <span class="co"># Filter modules based on permissions</span></span>
+<span id="cb9-70"><a href="#cb9-70" tabindex="-1"></a>  user_access_list <span class="ot">&lt;-</span> iam<span class="sc">$</span><span class="fu">get_user_accesslist</span>()</span>
+<span id="cb9-71"><a href="#cb9-71" tabindex="-1"></a>  users_modules <span class="ot">&lt;-</span> <span class="fu">unlist</span>(user_access_list, <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-72"><a href="#cb9-72" tabindex="-1"></a>  filtered_modules <span class="ot">&lt;-</span> <span class="fu">keep_by_label</span>(all_modules, users_modules)</span>
+<span id="cb9-73"><a href="#cb9-73" tabindex="-1"></a></span>
+<span id="cb9-74"><a href="#cb9-74" tabindex="-1"></a>  <span class="co"># Handle no access</span></span>
+<span id="cb9-75"><a href="#cb9-75" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(filtered_modules)) {</span>
+<span id="cb9-76"><a href="#cb9-76" tabindex="-1"></a>    filtered_modules <span class="ot">&lt;-</span> <span class="fu">modules</span>(</span>
+<span id="cb9-77"><a href="#cb9-77" tabindex="-1"></a>      <span class="fu">module</span>(</span>
+<span id="cb9-78"><a href="#cb9-78" tabindex="-1"></a>        <span class="at">label =</span> <span class="st">&quot;No Access&quot;</span>,</span>
+<span id="cb9-79"><a href="#cb9-79" tabindex="-1"></a>        <span class="at">ui =</span> <span class="cf">function</span>(id) tags<span class="sc">$</span><span class="fu">div</span>(</span>
+<span id="cb9-80"><a href="#cb9-80" tabindex="-1"></a>          <span class="at">class =</span> <span class="st">&quot;alert alert-warning&quot;</span>,</span>
+<span id="cb9-81"><a href="#cb9-81" tabindex="-1"></a>          <span class="fu">h4</span>(<span class="st">&quot;Access Restricted&quot;</span>),</span>
+<span id="cb9-82"><a href="#cb9-82" tabindex="-1"></a>          <span class="fu">p</span>(<span class="st">&quot;You do not have permission to access any modules.&quot;</span>),</span>
+<span id="cb9-83"><a href="#cb9-83" tabindex="-1"></a>          <span class="fu">p</span>(<span class="st">&quot;Please contact your administrator.&quot;</span>)</span>
+<span id="cb9-84"><a href="#cb9-84" tabindex="-1"></a>        )</span>
+<span id="cb9-85"><a href="#cb9-85" tabindex="-1"></a>      )</span>
+<span id="cb9-86"><a href="#cb9-86" tabindex="-1"></a>    )</span>
+<span id="cb9-87"><a href="#cb9-87" tabindex="-1"></a>  }</span>
+<span id="cb9-88"><a href="#cb9-88" tabindex="-1"></a></span>
+<span id="cb9-89"><a href="#cb9-89" tabindex="-1"></a>  <span class="co"># Render teal UI</span></span>
+<span id="cb9-90"><a href="#cb9-90" tabindex="-1"></a>  output<span class="sc">$</span>teal_ui <span class="ot">&lt;-</span> <span class="fu">renderUI</span>({</span>
+<span id="cb9-91"><a href="#cb9-91" tabindex="-1"></a>    <span class="fu">tagList</span>(</span>
+<span id="cb9-92"><a href="#cb9-92" tabindex="-1"></a>      <span class="fu">ui_teal</span>(<span class="st">&quot;teal_app&quot;</span>, filtered_modules),</span>
+<span id="cb9-93"><a href="#cb9-93" tabindex="-1"></a>      <span class="fu">ui_session_info</span>(<span class="st">&quot;session_info&quot;</span>)</span>
+<span id="cb9-94"><a href="#cb9-94" tabindex="-1"></a>    )</span>
+<span id="cb9-95"><a href="#cb9-95" tabindex="-1"></a>  })</span>
+<span id="cb9-96"><a href="#cb9-96" tabindex="-1"></a></span>
+<span id="cb9-97"><a href="#cb9-97" tabindex="-1"></a>  <span class="co"># Teal server</span></span>
+<span id="cb9-98"><a href="#cb9-98" tabindex="-1"></a>  <span class="fu">srv_teal</span>(<span class="st">&quot;teal_app&quot;</span>, <span class="at">data =</span> data, <span class="at">modules =</span> filtered_modules)</span>
+<span id="cb9-99"><a href="#cb9-99" tabindex="-1"></a>  <span class="fu">srv_session_info</span>(<span class="st">&quot;session_info&quot;</span>)</span>
+<span id="cb9-100"><a href="#cb9-100" tabindex="-1"></a>}</span>
+<span id="cb9-101"><a href="#cb9-101" tabindex="-1"></a></span>
+<span id="cb9-102"><a href="#cb9-102" tabindex="-1"></a><span class="do">### Application Launch</span></span>
+<span id="cb9-103"><a href="#cb9-103" tabindex="-1"></a><span class="co"># Create and run the application</span></span>
+<span id="cb9-104"><a href="#cb9-104" tabindex="-1"></a>app <span class="ot">&lt;-</span> <span class="fu">shinyApp</span>(ui, server)</span>
+<span id="cb9-105"><a href="#cb9-105" tabindex="-1"></a></span>
+<span id="cb9-106"><a href="#cb9-106" tabindex="-1"></a><span class="co"># For development</span></span>
+<span id="cb9-107"><a href="#cb9-107" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">interactive</span>()) {</span>
+<span id="cb9-108"><a href="#cb9-108" tabindex="-1"></a>  <span class="fu">runApp</span>(app)</span>
+<span id="cb9-109"><a href="#cb9-109" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="running-the-example" class="section level3">
+<h3>Running the Example</h3>
+<p>The app will show different modules based on the user: -
+<code>admin</code>: Access to admin panel - <code>other users</code>:
+Access based on <code>rAccess</code> permissions - Unauthorized users:
+“No Access” message</p>
+<p><strong>Note</strong>: Until you define and add at least one admin,
+the admin tab will be accessible by everyone. Once there is at least one
+admin defined, access control becomes enforced.</p>
+</div>
+<div id="access-boards-storage-setup" class="section level3">
+<h3>Access-boards Storage Setup</h3>
+<p>In this example, with <code>board_type: local</code> configured in
+<code>rAccess_config.yml</code>, access lists are stored locally in the
+<code>./data/</code> directory within your application. Alternative
+storage options include <code>AWS S3</code> or
+<code>Posit Connect</code> pins - refer to the <code>rAccess</code>
+documentation for configuration details.</p>
+</div>
+<div id="debugging-tips" class="section level3">
+<h3>Debugging Tips</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Ensure the rAccess configuration (`rAccess_config.yml` in the example) is</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>accessible by your app.</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co"># Ensure module labels match exactly between configuration and code</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co"># Enable verbose logging</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>iam <span class="ot">&lt;-</span> rAccess<span class="sc">$</span><span class="fu">new</span>(<span class="at">user =</span> user_id, <span class="at">config =</span> <span class="st">&quot;config.yml&quot;</span>, <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co"># Check user access list</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="fu">print</span>(iam<span class="sc">$</span><span class="fu">get_user_accesslist</span>())</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co"># Verify module labels</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">sapply</span>(all_modules<span class="sc">$</span>children, <span class="cf">function</span>(x) x<span class="sc">$</span>label))</span></code></pre></div>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>The uteals package provides essential utilities for implementing
+access control in teal applications:</p>
+<ul>
+<li><code>extract_modules_to_yaml()</code>: Automates configuration
+generation</li>
+<li><code>keep_by_label()</code>: Filters modules by user
+permissions</li>
+<li><code>remove_by_label()</code>: Excludes restricted modules</li>
+</ul>
+<p>This integration enables secure, role-based access control while
+maintaining the flexibility and power of the teal framework.</p>
+</div>
+<div id="further-reading" class="section level2">
+<h2>Further Reading</h2>
+<ul>
+<li><a href="https://johnsonandjohnson.github.io/rAccess/"><code>rAccess</code>
+Documentation</a></li>
+<li><a href="https://insightsengineering.github.io/teal/latest-tag/articles/teal-as-a-shiny-module.html"><code>Teal</code>
+as <code>Shiny</code> Module</a></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
