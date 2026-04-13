@@ -17,17 +17,17 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Konrad Pagacz \email{konrad.pagacz@gmail.com}
+\strong{Maintainer}: Peyman Eshghi \email{peymaan.es@gmail.com}
 
 Authors:
 \itemize{
   \item Nadia Abraham \email{NAbraha5@ITS.JNJ.com}
   \item Chanchal Bhalla \email{CBhalla@ITS.JNJ.com}
-  \item Peyman Eshghi \email{peymaan.es@gmail.com}
   \item Pranith Gourisetty \email{PGourise@ITS.JNJ.com}
   \item Sohan Lal \email{SLal8@ITS.JNJ.com}
   \item Przemyslaw Posiadala \email{PPosiada@ITS.JNJ.com}
   \item Alina Tselinina \email{ATselini@ITS.JNJ.com}
+  \item Konrad Pagacz \email{konrad.pagacz@gmail.com}
 }
 
 Other contributors:

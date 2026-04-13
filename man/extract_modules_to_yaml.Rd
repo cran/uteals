@@ -31,4 +31,9 @@ mods <- teal::modules(
 labels <- extract_modules_to_yaml(mods, "panel_str_modules.yml")
 unlink("panel_str_modules.yml")
 
+# Clean up
+if (file.exists("panel_str_modules.yml")) {
+  file.remove("panel_str_modules.yml")
+}
+
 }
