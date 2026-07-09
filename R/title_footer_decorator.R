@@ -34,6 +34,8 @@
 #' @importFrom teal teal_transform_module
 #' @importFrom shiny NS tagList div selectInput checkboxInput uiOutput renderUI textInput moduleServer reactive req
 #' @importFrom grDevices graphics.off
+#' @importFrom dplyr filter
+#' @importFrom rlang .data
 #'
 #' @examples
 #' library(openxlsx)
@@ -106,14 +108,15 @@ title_footer_decorator <- function(output_name, titles_file, choices = NULL, sel
   checkmate::assert_string(selected, null.ok = TRUE)
 
   titles <- openxlsx::read.xlsx(titles_file, "Sheet1")
-  titles$TABLE.ID[1] <- "blank"
+  titles <- titles |> dplyr::filter(!grepl("delete", .data$TABLE.ID, ignore.case = TRUE))
 
+  selected <- `if`(is.null(selected), "", selected)
   choices <- `if`(is.null(choices), unique(titles$TABLE.ID), intersect(choices, titles$TABLE.ID))
+  choices <- c(choices, "")
   checkmate::assert(
     checkmate::check_null(selected),
-    \() `if`(selected %in% choices, TRUE, "selected must be one of the choices")
+    checkmate::check_choice(selected, choices)
   )
-
 
   teal::teal_transform_module(
     label = "Title and footer decorator",
@@ -121,7 +124,17 @@ title_footer_decorator <- function(output_name, titles_file, choices = NULL, sel
       ns <- NS(id)
       tagList(
         div(
-          selectInput(ns("selectTitle"), label = "Select Title", choices = choices, selected = selected),
+          selectizeInput(
+            ns("selectTitle"),
+            label = "Select Title",
+            choices = choices,
+            selected = selected,
+            options = list(
+              allowEmptyOption = TRUE,
+              placeholder = "Select a value...",
+              plugins = list("clear_button")
+            )
+          ),
           checkboxInput(ns("customize"), label = "Customize Title and Footer", value = FALSE),
           uiOutput(ns("customInputs"))
         )
@@ -133,8 +146,8 @@ title_footer_decorator <- function(output_name, titles_file, choices = NULL, sel
         output$customInputs <- renderUI({
           if (input$customize) {
             tagList(
-              textInput(session$ns("customTitle"), label = "Custom Title", value = ""),
-              textInput(session$ns("customFooter"), label = "Custom Footer", value = "")
+              textInput(session$ns("customTitle"), label = "Custom Title", value = "", updateOn = "blur"),
+              textInput(session$ns("customFooter"), label = "Custom Footer", value = "", updateOn = "blur")
             )
           }
         })
@@ -173,7 +186,7 @@ title_footer_decorator <- function(output_name, titles_file, choices = NULL, sel
               customTitle = input$customTitle,
               customFooter = input$customFooter
             )
-          } else if (input$selectTitle != "blank") {
+          } else if (input$selectTitle != "blank" && !is.null(input$selectTitle) && input$selectTitle != "") {
             res <- within(
               res,
               {

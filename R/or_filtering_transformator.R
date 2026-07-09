@@ -18,7 +18,8 @@
 #'
 #' - **Supported Data Types & Expressions:**
 #'   - Supports filtering on \code{character}, \code{factor}, and \code{numeric} columns.
-#'   - Conditions can use operators: \code{==}, \code{!=}, \code{<}, \code{>}, \code{<=}, \code{>=}.
+#'   - Conditions can use operators: \code{==}, \code{!=}, \code{<},
+#'     \code{>}, \code{<=}, \code{>=}, \code{%in%}, \code{!%in%}.
 #'   - Conditions are specified as simple expressions, e.g.,
 #'     \code{columnA == 'value'}
 #'     \code{columnB != 5}
@@ -46,7 +47,6 @@
 #' @importFrom shiny updateSelectInput showNotification showModal modalDialog reactiveValues observe reactive
 #' @importFrom shinyWidgets pickerInput
 #' @importFrom dplyr filter
-#' @importFrom shinyBS bsModal
 #' @importFrom rlang parse_expr
 #' @importFrom methods new
 #' @importFrom shinyjs toggle show hidden hide useShinyjs
@@ -91,13 +91,6 @@ or_filtering_transformator <- function(dataname) {
           style = "width: -webkit-fill-available;margin: 5px;",
           title = "Click to preview the current filtering expression"
         ),
-        shinyBS::bsModal(
-          "filterPreview",
-          "Filtering Expression Preview",
-          "preview",
-          size = "large",
-          shiny::htmlOutput("filter_preview")
-        ),
         shiny::div(
           shiny::actionButton(
             ns("add_alternative"),
@@ -111,8 +104,6 @@ or_filtering_transformator <- function(dataname) {
     },
     server = function(id, data) {
       shiny::moduleServer(id, function(input, output, session) {
-        ns <- shiny::NS(id)
-
         view_model <- filtering_transformator_model$new(data, dataname)
 
         output$dataset <- shiny::renderText({
@@ -161,7 +152,7 @@ or_filtering_transformator <- function(dataname) {
             selector = paste0("#", session$ns("add_alternative")),
             where = "beforeBegin",
             ui = shiny::tags$div(
-              id = paste0("alt_block_", view_model$alt_id()),
+              id = session$ns(paste0("alt_block_", view_model$alt_id())),
               style = "background-color: #ededed;margin-top: 7px;padding: 10px;",
               shiny::div(
                 style = "display:flex;",
@@ -198,9 +189,8 @@ or_filtering_transformator <- function(dataname) {
                   "Select Condition",
                   choices = c("==", "!=", "<", ">")
                 ),
-                shiny::selectInput(
-                  session$ns(paste0("value_input_", view_model$alt_id())), "Select Value",
-                  choices = NULL
+                shiny::uiOutput(
+                  session$ns(paste0("value_input_", view_model$alt_id()))
                 ),
                 shiny::actionButton(
                   session$ns(paste0("add_condition_", view_model$alt_id())),
@@ -220,7 +210,17 @@ or_filtering_transformator <- function(dataname) {
             operator <- input[[paste0("operator_selector_", view_model$alt_id())]]
             value <- input[[paste0("value_input_", view_model$alt_id())]]
 
-            cond_str <- paste0(variable, " ", operator, " ", value)
+            cond_str <- switch(operator,
+              "%in%" = {
+                quoted_vals <- paste0(sprintf("'%s'", value), collapse = ", ")
+                sprintf("%s %%in%% c(%s)", variable, quoted_vals)
+              },
+              "!%in%" = {
+                quoted_vals <- paste0(sprintf("'%s'", value), collapse = ", ")
+                sprintf("!%s %%in%% c(%s)", variable, quoted_vals)
+              },
+              sprintf("%s %s %s", variable, operator, value)
+            )
 
             # Check for duplicates in current block
             existing_conds <- if (is.null(view_model$block_conditions[[as.character(view_model$alt_id())]])) {
@@ -311,17 +311,46 @@ or_filtering_transformator <- function(dataname) {
             col_data <- data()[[dataname]][[selected_col]]
 
             if (is.numeric(col_data)) {
-              shiny::updateSelectInput(session, paste0("value_input_", current_id), choices = c(unique(col_data)))
+              output[[paste0("value_input_", current_id)]] <- renderUI({
+                shiny::selectInput(
+                  session$ns(paste0("value_input_", current_id)),
+                  "Select Value",
+                  choices = unique(col_data)
+                )
+              })
               shiny::updateSelectInput(
-                session, paste0("operator_selector_", current_id),
-                choices = c("==", "!=", "<=", ">=")
+                session,
+                paste0("operator_selector_", current_id),
+                choices = c("==", "!=", "<=", ">="),
+                selected = "=="
               )
             } else if (is.character(col_data) || is.factor(col_data)) {
+              lvls <- levels(factor(col_data))
+
+              output[[paste0("value_input_", current_id)]] <- renderUI({
+                op <- input[[paste0("operator_selector_", current_id)]]
+                if (!is.null(op) && op %in% c("%in%", "!%in%")) {
+                  shinyWidgets::pickerInput(
+                    session$ns(paste0("value_input_", current_id)),
+                    "Select Values",
+                    choices = lvls,
+                    selected = lvls,
+                    multiple = TRUE
+                  )
+                } else {
+                  shiny::selectInput(
+                    session$ns(paste0("value_input_", current_id)),
+                    "Select Value",
+                    choices = lvls
+                  )
+                }
+              })
+
               shiny::updateSelectInput(
-                session, paste0("value_input_", current_id),
-                choices = c(levels(factor(col_data)))
+                session,
+                paste0("operator_selector_", current_id),
+                choices = c("==", "!=", "%in%", "!%in%")
               )
-              shiny::updateSelectInput(session, paste0("operator_selector_", current_id), choices = c("==", "!="))
             } else {
               shiny::updateSelectInput(session, paste0("value_input_", current_id), choices = NULL)
               shiny::updateSelectInput(session, paste0("operator_selector_", current_id), choices = NULL)
@@ -330,7 +359,6 @@ or_filtering_transformator <- function(dataname) {
         })
 
         shiny::observeEvent(input$preview, {
-          # Get the filter expression
           filter_expr <- view_model$final_filter_expr()
 
           shiny::showModal(
@@ -356,8 +384,8 @@ or_filtering_transformator <- function(dataname) {
           within(
             data(),
             {
-              if (filters != "" & filters != "()") {
-                df <- df |> dplyr::filter(!!rlang::parse_expr(filters))
+              if (filters != "" && filters != "()") {
+                df <- df |> dplyr::filter(!!rlang::parse_expr(filters)) # nolint: object_usage_linter
               }
             },
             filters = view_model$final_exp(),
